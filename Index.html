@@ -252,14 +252,11 @@
 
     <script>
         // ==================================================
-        // SUPABASE VERBINDUNG (Hier eintragen, wenn bereit!)
-        // ==================================================
-        // Sobald du dein Supabase-Projekt hast, lösche einfach das '//' vor den nächsten 3 Zeilen 
-        // und füge deine Projekt-Daten ein:
-        
-        // const supabaseUrl = 'https://deine-url.supabase.co';
-        // const supabaseKey = 'dein-anon-key';
-        // const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+// SUPABASE VERBINDUNG (Aktiviert!)
+// ==================================================
+const supabaseUrl = 'https://lthlohvpkubdgadfpzot.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx0aGxvaHZwa3ViZGdhZGZwem90Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwOTg0ODEsImV4cCI6MjA5NjY3NDQ4MX0.ekbZnN4ooBQFOyyIHGzFSltjWxz3-ZzNz6UQ_kOMg3s';
+const supabase = supabase.createClient(supabaseUrl, supabaseKey);
         
         const isSupabaseConfigured = typeof supabase !== 'undefined';
         let drinksList = [];
