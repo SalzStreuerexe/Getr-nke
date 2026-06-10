@@ -251,10 +251,11 @@
     </div>
 
     <script>
-
-const supabaseUrl = 'https://lthlohvpkubdgadfpzot.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx0aGxvaHZwa3ViZGdhZGZwem90Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwOTg0ODEsImV4cCI6MjA5NjY3NDQ4MX0.ekbZnN4ooBQFOyyIHGzFSltjWxz3-ZzNz6UQ_kOMg3s';
-const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+       
+        
+         const supabaseUrl = 'https://hhjumqciyortsdpvhtgi.supabase.co';
+         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhoanVtcWNpeW9ydHNkcHZodGdpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwOTk4NzAsImV4cCI6MjA5NjY3NTg3MH0.vjyAd6ksyp1efLqf0OMVDzpNSPoEvH-rrjBamJpmZYc';
+         const supabase = supabase.createClient(supabaseUrl, supabaseKey);
         
         const isSupabaseConfigured = typeof supabase !== 'undefined';
         let drinksList = [];
@@ -267,7 +268,7 @@ const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
         async function fetchDrinks() {
             if (isSupabaseConfigured) {
                 try {
-                    let { data, error } = await supabase.from('Getränke').select('*');
+                    let { data, error } = await supabase.from('drinks').select('*');
                     if (error) throw error;
                     drinksList = data || [];
                 } catch (err) {
