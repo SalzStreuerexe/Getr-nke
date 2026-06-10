@@ -267,7 +267,7 @@ const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
         async function fetchDrinks() {
             if (isSupabaseConfigured) {
                 try {
-                    let { data, error } = await supabase.from('drinks').select('*');
+                    let { data, error } = await supabase.from('Getränke').select('*');
                     if (error) throw error;
                     drinksList = data || [];
                 } catch (err) {
