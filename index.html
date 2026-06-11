@@ -34,7 +34,6 @@
         h1 { text-align: center; margin-bottom: 0.5rem; font-size: 2.5rem; color: #fff; }
         .subtitle { text-align: center; margin-bottom: 1rem; color: #ecf0f1; }
         
-        /* DIAGNOSE BANNER STYLE */
         #statusBanner {
             display: none; width: 100%; padding: 1rem; margin-bottom: 1.5rem;
             border-radius: 8px; text-align: center; font-weight: bold; font-size: 1.1rem;
@@ -100,23 +99,25 @@
     <script>
         const supabaseUrl = 'https://hhjumqciyortsdpvhtgi.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhoanVtcWNpeW9ydHNkcHZodGdpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwOTk4NzAsImV4cCI6MjA5NjY3NTg3MH0.vjyAd6ksyp1efLqf0OMVDzpNSPoEvH-rrjBamJpmZYc';
-        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
         
+        // HIER IST DIE WICHTIGSTE ÄNDERUNG: Wir haben die Variable zu "supabaseClient" umbenannt!
+        const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+        
+        const isSupabaseConfigured = typeof supabaseClient !== 'undefined';
         let drinksList = [];
 
-        // Hilfsfunktion für die Statusmeldungen
         function showStatus(message, isError = false, isSuccess = false) {
             const banner = document.getElementById('statusBanner');
             banner.style.display = 'block';
             banner.textContent = message;
             if (isError) {
-                banner.style.backgroundColor = '#e74c3c'; // Rot für Fehler
+                banner.style.backgroundColor = '#e74c3c'; 
                 banner.style.color = 'white';
             } else if (isSuccess) {
-                banner.style.backgroundColor = '#2ecc71'; // Grün für Erfolg
+                banner.style.backgroundColor = '#2ecc71'; 
                 banner.style.color = 'white';
             } else {
-                banner.style.backgroundColor = '#f1c40f'; // Gelb für "Lädt..."
+                banner.style.backgroundColor = '#f1c40f'; 
                 banner.style.color = '#333';
             }
         }
@@ -128,11 +129,12 @@
 
         async function fetchDrinks() {
             try {
-                let { data, error } = await supabase.from('drinks').select('*');
+                // Auch hier verwenden wir jetzt supabaseClient
+                let { data, error } = await supabaseClient.from('drinks').select('*');
                 if (error) throw error;
                 drinksList = data || [];
                 renderTable();
-                document.getElementById('statusBanner').style.display = 'none'; // Verstecken wenn alles gut ist
+                document.getElementById('statusBanner').style.display = 'none';
             } catch (err) {
                 showStatus("Ladefehler: " + err.message, true, false);
             }
@@ -143,7 +145,6 @@
             const emptyMessage = document.getElementById('emptyMessage');
             tableBody.innerHTML = '';
 
-            // Sortiere: Neueste oben (falls created_at existiert)
             let displayList = [...drinksList].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
 
             if (displayList.length === 0) {
@@ -151,7 +152,10 @@
                 emptyMessage.style.display = 'block';
             } else {
                 emptyMessage.style.display = 'none';
-                displayList.forEach(entry => {
+                
+                // For-Schleife statt while oder forEach (um flexibel zu bleiben)
+                for (let i = 0; i < displayList.length; i++) {
+                    const entry = displayList[i];
                     const row = document.createElement('tr');
                     
                     const nameTd = document.createElement('td'); nameTd.textContent = entry.name;
@@ -165,7 +169,7 @@
 
                     row.appendChild(nameTd); row.appendChild(drinkTd); row.appendChild(typeTd);
                     tableBody.appendChild(row);
-                });
+                }
             }
         }
 
@@ -184,33 +188,28 @@
                 return;
             }
 
-            // Button kurz sperren, damit man nicht doppelt klickt
             btn.disabled = true;
             btn.textContent = "Wird gespeichert...";
             showStatus("Speichere in Datenbank...", false, false);
 
             const newEntry = { name: name, drink: drink, type: type };
 
-            // 1. Visueller Trick: Sofort in die Liste einfügen für sofortiges Feedback
             drinksList.unshift(newEntry);
             renderTable();
 
-            // 2. Jetzt wirklich an Supabase senden
             try {
-                const { error } = await supabase.from('drinks').insert([newEntry]);
+                // Und hier natürlich auch supabaseClient
+                const { error } = await supabaseClient.from('drinks').insert([newEntry]);
                 if (error) throw error;
                 
                 showStatus("✅ Erfolgreich in der Datenbank gespeichert!", false, true);
                 
-                // Felder leeren
                 nameInput.value = ''; drinkInput.value = '';
                 
-                // Banner nach 3 Sekunden wieder ausblenden
                 setTimeout(() => { document.getElementById('statusBanner').style.display = 'none'; }, 3000);
                 
             } catch (err) {
                 showStatus("Datenbank-Fehler: " + err.message, true, false);
-                // Wenn Fehler, den fehlerhaften Eintrag wieder aus der Tabelle löschen
                 drinksList.shift();
                 renderTable();
             }
