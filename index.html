@@ -25,7 +25,7 @@
             background: rgba(0, 0, 0, 0.6); z-index: -1;
         }
         .container {
-            width: 100%; max-width: 750px; background: rgba(0, 0, 0, 0.5);
+            width: 100%; max-width: 850px; background: rgba(0, 0, 0, 0.5);
             backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
             padding: 2rem; border-radius: 16px;
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
@@ -42,14 +42,23 @@
         
         .form-container { background: rgba(255, 255, 255, 0.95); padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; color: #333; }
         .form-row { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
-        .form-group { flex: 1; min-width: 180px; display: flex; flex-direction: column; }
+        .form-group { flex: 1; min-width: 150px; display: flex; flex-direction: column; }
         .form-group label { font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; color: #2c3e50; }
         input, select { padding: 0.75rem; border: 1px solid #ccc; border-radius: 6px; font-size: 0.95rem; }
+        
         .btn-submit { width: 100%; padding: 0.85rem; background: #27ae60; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 1rem; font-weight: bold; }
         .btn-submit:hover { background: #219653; }
+        
+        /* NEU: Styling für den Löschen-Button */
+        .btn-delete {
+            background: #e74c3c; color: white; border: none; padding: 0.4rem 0.8rem;
+            border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: bold; transition: background 0.2s;
+        }
+        .btn-delete:hover { background: #c0392b; }
+
         .table-responsive { width: 100%; overflow-x: auto; border-radius: 12px; }
         table { width: 100%; border-collapse: collapse; background: rgba(255, 255, 255, 0.95); color: #333; text-align: left; }
-        th, td { padding: 1rem; border-bottom: 1px solid #e0e0e0; }
+        th, td { padding: 1rem; border-bottom: 1px solid #e0e0e0; vertical-align: middle; }
         th { background-color: #2c3e50; color: white; text-transform: uppercase; font-size: 0.85rem; }
         .badge { display: inline-block; padding: 0.25rem 0.6rem; border-radius: 50px; font-size: 0.75rem; font-weight: bold; color: white; }
         .badge-alk { background-color: #e74c3c; } .badge-alkfrei { background-color: #2ecc71; }
@@ -60,7 +69,7 @@
 
     <div class="container">
         <h1>🍻 Getränke-Wunschliste</h1>
-        <div class="subtitle">Version 2.0 - Mit Live-Diagnose</div>
+        <div class="subtitle">Trag ein, was und wie viel du trinken möchtest!</div>
 
         <div id="statusBanner">Status-Meldung</div>
 
@@ -71,8 +80,12 @@
                     <input type="text" id="nameInput" placeholder="Z.B. Max" required>
                 </div>
                 <div class="form-group">
-                    <label for="drinkInput">Dein Getränk</label>
+                    <label for="drinkInput">Getränk</label>
                     <input type="text" id="drinkInput" placeholder="Z.B. Weizen, Cola..." required>
+                </div>
+                <div class="form-group">
+                    <label for="amountInput">Wie viel?</label>
+                    <input type="text" id="amountInput" placeholder="Z.B. 2 Flaschen" required>
                 </div>
                 <div class="form-group">
                     <label for="typeInput">Kategorie</label>
@@ -88,7 +101,13 @@
         <div class="table-responsive">
             <table id="drinkTable">
                 <thead>
-                    <tr><th>Name</th><th>Getränk</th><th>Typ</th></tr>
+                    <tr>
+                        <th>Name</th>
+                        <th>Getränk</th>
+                        <th>Menge</th>
+                        <th>Typ</th>
+                        <th>Aktion</th>
+                    </tr>
                 </thead>
                 <tbody id="tableBody"></tbody>
             </table>
@@ -100,9 +119,7 @@
         const supabaseUrl = 'https://hhjumqciyortsdpvhtgi.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhoanVtcWNpeW9ydHNkcHZodGdpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwOTk4NzAsImV4cCI6MjA5NjY3NTg3MH0.vjyAd6ksyp1efLqf0OMVDzpNSPoEvH-rrjBamJpmZYc';
         
-        // HIER IST DIE WICHTIGSTE ÄNDERUNG: Wir haben die Variable zu "supabaseClient" umbenannt!
         const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
-        
         const isSupabaseConfigured = typeof supabaseClient !== 'undefined';
         let drinksList = [];
 
@@ -129,7 +146,6 @@
 
         async function fetchDrinks() {
             try {
-                // Auch hier verwenden wir jetzt supabaseClient
                 let { data, error } = await supabaseClient.from('drinks').select('*');
                 if (error) throw error;
                 drinksList = data || [];
@@ -153,21 +169,41 @@
             } else {
                 emptyMessage.style.display = 'none';
                 
-                // For-Schleife statt while oder forEach (um flexibel zu bleiben)
                 for (let i = 0; i < displayList.length; i++) {
                     const entry = displayList[i];
                     const row = document.createElement('tr');
                     
-                    const nameTd = document.createElement('td'); nameTd.textContent = entry.name;
-                    const drinkTd = document.createElement('td'); drinkTd.textContent = entry.drink;
-                    const typeTd = document.createElement('td');
+                    const nameTd = document.createElement('td'); 
+                    nameTd.textContent = entry.name;
                     
+                    const drinkTd = document.createElement('td'); 
+                    drinkTd.textContent = entry.drink;
+                    
+                    // NEU: Spalte für Menge (falls alte Einträge leer sind, zeige "-" an)
+                    const amountTd = document.createElement('td'); 
+                    amountTd.textContent = entry.menge || "-";
+                    
+                    const typeTd = document.createElement('td');
                     const badge = document.createElement('span');
                     badge.className = `badge ${entry.type === 'alkoholisch' ? 'badge-alk' : 'badge-alkfrei'}`;
                     badge.textContent = entry.type === 'alkoholisch' ? 'Mit Alkohol' : 'Alkoholfrei';
                     typeTd.appendChild(badge);
 
-                    row.appendChild(nameTd); row.appendChild(drinkTd); row.appendChild(typeTd);
+                    // NEU: Spalte für den Lösch-Button
+                    const actionTd = document.createElement('td');
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'btn-delete';
+                    deleteBtn.textContent = '🗑️ Löschen';
+                    // Ruft die neue Löschfunktion auf und übergibt die Datenbank-ID
+                    deleteBtn.onclick = function() { deleteDrink(entry.id); };
+                    actionTd.appendChild(deleteBtn);
+
+                    row.appendChild(nameTd); 
+                    row.appendChild(drinkTd); 
+                    row.appendChild(amountTd);
+                    row.appendChild(typeTd);
+                    row.appendChild(actionTd);
+                    
                     tableBody.appendChild(row);
                 }
             }
@@ -177,14 +213,16 @@
             const btn = document.getElementById('submitBtn');
             const nameInput = document.getElementById('nameInput');
             const drinkInput = document.getElementById('drinkInput');
+            const amountInput = document.getElementById('amountInput'); // NEU
             const typeInput = document.getElementById('typeInput');
 
             const name = nameInput.value.trim();
             const drink = drinkInput.value.trim();
+            const amount = amountInput.value.trim(); // NEU
             const type = typeInput.value;
 
-            if (!name || !drink) {
-                showStatus("Bitte fülle Name und Getränk aus!", true, false);
+            if (!name || !drink || !amount) {
+                showStatus("Bitte fülle Name, Getränk und Menge aus!", true, false);
                 return;
             }
 
@@ -192,30 +230,61 @@
             btn.textContent = "Wird gespeichert...";
             showStatus("Speichere in Datenbank...", false, false);
 
-            const newEntry = { name: name, drink: drink, type: type };
-
-            drinksList.unshift(newEntry);
-            renderTable();
+            // Menge in den Datensatz aufnehmen
+            const newEntry = { name: name, drink: drink, menge: amount, type: type };
 
             try {
-                // Und hier natürlich auch supabaseClient
                 const { error } = await supabaseClient.from('drinks').insert([newEntry]);
                 if (error) throw error;
                 
                 showStatus("✅ Erfolgreich in der Datenbank gespeichert!", false, true);
                 
-                nameInput.value = ''; drinkInput.value = '';
+                // Felder leeren
+                nameInput.value = ''; 
+                drinkInput.value = ''; 
+                amountInput.value = '';
+                
+                // Die Daten sofort neu aus der Datenbank abrufen, damit auch die neue ID für den Lösch-Button da ist
+                await fetchDrinks();
                 
                 setTimeout(() => { document.getElementById('statusBanner').style.display = 'none'; }, 3000);
                 
             } catch (err) {
                 showStatus("Datenbank-Fehler: " + err.message, true, false);
-                drinksList.shift();
-                renderTable();
             }
 
             btn.disabled = false;
             btn.textContent = "Eintrag hinzufügen";
+        }
+
+        // NEUE FUNKTION: Löschen von Einträgen
+        async function deleteDrink(id) {
+            // Sicherheitsabfrage: Wirklich löschen?
+            const confirmDelete = confirm("Bist du dir sicher, dass du diesen Eintrag löschen möchtest?");
+            if (!confirmDelete) {
+                return; // Abbruch, wenn man auf "Abbrechen" klickt
+            }
+
+            showStatus("Lösche Eintrag...", false, false);
+
+            try {
+                const { error } = await supabaseClient
+                    .from('drinks')
+                    .delete()
+                    .eq('id', id);
+
+                if (error) throw error;
+
+                showStatus("✅ Eintrag erfolgreich gelöscht!", false, true);
+                
+                // Tabelle aktualisieren
+                await fetchDrinks();
+
+                setTimeout(() => { document.getElementById('statusBanner').style.display = 'none'; }, 3000);
+
+            } catch (err) {
+                showStatus("Fehler beim Löschen: " + err.message, true, false);
+            }
         }
     </script>
 </body>
